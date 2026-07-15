@@ -1,5 +1,6 @@
 import serial
 import time
+import socket
 from PyQt6.QtCore import QThread, pyqtSignal
 
 class SerialThread(QThread):
@@ -13,6 +14,7 @@ class SerialThread(QThread):
         self.baudrate = baudrate
         self.is_running = True
         self.ser = None
+        self.sock = None
 
     def run(self):
         """Background loop listening for button presses."""
@@ -21,27 +23,39 @@ class SerialThread(QThread):
             self.ser = serial.Serial(self.port, self.baudrate, timeout=0.1)
             self.status_received.emit(f"Connected to {self.port}")
             print(f"[UART] Listening on {self.port} at {self.baudrate} baud...")
+        except serial.SerialException as e:
+            print(f"[UART] Failed to open {self.port}: {e}")
+            print(f"[UART] Falling back to UDP Simulator on port 12345...")
+            self.status_received.emit("Connected (Simulated UDP)")
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.sock.bind(('127.0.0.1', 12345))
+            self.sock.settimeout(0.1)
             
-            while self.is_running:
+        while self.is_running:
+            if self.ser and self.ser.is_open:
                 # Check if data is waiting in the buffer
                 if self.ser.in_waiting > 0:
                     raw_byte = self.ser.read(1)
                     
                     if raw_byte:
-                        # Convert byte to integer and isolate the lower 4 bits
-                        # e.g., 0xA5 (1010 0101) becomes 0x05 (0101)
                         val = raw_byte[0] & 0x0F 
-                        
-                        # Tell the GUI a button was pressed!
                         self.button_pressed.emit(val)
                         print(f"[UART] Received 4-bit command: {hex(val)}")
                 else:
-                    # Sleep briefly to keep CPU usage near 0%
                     time.sleep(0.01) 
-
-        except Exception as e:
-            self.status_received.emit("UART Error / Disconnected")
-            print(f"[UART CRITICAL ERROR] {e}")
+            elif self.sock:
+                try:
+                    data, _ = self.sock.recvfrom(1024)
+                    if data:
+                        char = data.decode('utf-8').strip()
+                        if char.isdigit():
+                            val = int(char)
+                            self.button_pressed.emit(val)
+                            print(f"[SIMULATOR] Received: {val}")
+                except socket.timeout:
+                    pass
+            else:
+                time.sleep(0.1)
 
     def send_ejector_command(self, cmd_char):
         """Called by Vision Thread to send 'P' or 'F' to the STM32."""

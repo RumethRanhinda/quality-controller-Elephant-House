@@ -1,5 +1,77 @@
 [
     {
+        "timestamp": "2026-07-16 02:41:56",
+        "end_timestamp": "2026-07-16 02:42:14",
+        "bottle_size": "1.5l",
+        "flavour": "Orange Crush",
+        "threshold": 410,
+        "total": 22,
+        "accepted": 0,
+        "rejected": 22,
+        "yield": 0.0,
+        "duration_sec": 18
+    },
+    {
+        "timestamp": "2026-07-16 02:38:48",
+        "end_timestamp": "2026-07-16 02:39:00",
+        "bottle_size": "1.5l",
+        "flavour": "Orange Barley",
+        "threshold": 252,
+        "total": 12,
+        "accepted": 0,
+        "rejected": 12,
+        "yield": 0.0,
+        "duration_sec": 11
+    },
+    {
+        "timestamp": "2026-07-16 02:14:18",
+        "end_timestamp": "2026-07-16 02:16:10",
+        "bottle_size": "1.5l",
+        "flavour": "Necto",
+        "threshold": 420,
+        "total": 199,
+        "accepted": 3,
+        "rejected": 196,
+        "yield": 1.507537688442211,
+        "duration_sec": 112
+    },
+    {
+        "timestamp": "2026-07-16 00:55:55",
+        "end_timestamp": "2026-07-16 00:56:11",
+        "bottle_size": "500ml",
+        "flavour": "Necto",
+        "threshold": 290,
+        "total": 19,
+        "accepted": 0,
+        "rejected": 19,
+        "yield": 0.0,
+        "duration_sec": 16
+    },
+    {
+        "timestamp": "2026-07-16 00:55:05",
+        "end_timestamp": "2026-07-16 00:55:11",
+        "bottle_size": "500ml",
+        "flavour": "Necto",
+        "threshold": 290,
+        "total": 41,
+        "accepted": 0,
+        "rejected": 41,
+        "yield": 0.0,
+        "duration_sec": 6
+    },
+    {
+        "timestamp": "2026-07-16 00:54:11",
+        "end_timestamp": "2026-07-16 00:54:54",
+        "bottle_size": "500ml",
+        "flavour": "Necto",
+        "threshold": 290,
+        "total": 41,
+        "accepted": 0,
+        "rejected": 41,
+        "yield": 0.0,
+        "duration_sec": 42
+    },
+    {
         "timestamp": "2026-07-13 22:09:53",
         "end_timestamp": "2026-07-13 22:09:59",
         "bottle_size": "500ml",

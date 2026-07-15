@@ -96,6 +96,12 @@ class CameraThread(QThread):
                     grabResult.Release()
                 else:
                     time.sleep(0.05)
+                    try:
+                        if self.camera.IsCameraDeviceRemoved():
+                            raise genicam.GenericException("Device removed")
+                    except AttributeError:
+                        # Fallback for older pypylon versions
+                        _ = self.camera.Width.GetValue()
             except genicam.GenericException as e:
                 self.status_changed.emit("Camera: Disconnected unexpectedly!")
                 if self.camera is not None:

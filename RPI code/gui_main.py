@@ -7,8 +7,8 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QHBoxLayout, QLabel, QComboBox, QSlider, 
                              QPushButton, QGroupBox, QFormLayout, QStackedWidget,
                              QListWidget, QListWidgetItem, QSplitter, QSizePolicy)
-from PyQt6.QtCore import Qt, pyqtSlot, QTimer
-from PyQt6.QtGui import QImage, QPixmap
+from PyQt6.QtCore import Qt, pyqtSlot, QTimer, QEvent, QObject
+from PyQt6.QtGui import QImage, QPixmap, QKeyEvent
 import cv2
 import numpy as np
 
@@ -34,8 +34,7 @@ class OperatorDashboard(QMainWindow):
                 color: #ffffff;
             }
             QPushButton:focus, QComboBox:focus, QSlider:focus, QListWidget:focus {
-                border: 4px solid #f39c12;  /* Distinct orange border for active focus */
-                background-color: #2c3e50;
+                border: 4px solid #f39c12;
                 outline: none;
             }
             QPushButton {
@@ -69,13 +68,33 @@ class OperatorDashboard(QMainWindow):
                 background-color: #2a2a2a;
                 border: 1px solid #555555;
                 border-radius: 4px;
-                padding: 6px;
+                padding: 6px 30px 6px 6px;
                 color: white;
                 font-weight: normal;
                 font-size: 14px;
             }
+            QComboBox:focus {
+                background-color: #2c3e50;
+                border: 4px solid #f39c12;
+            }
+            QSlider::groove:horizontal {
+                height: 6px;
+                background: #444444;
+                border-radius: 3px;
+            }
+            QSlider::handle:horizontal {
+                background: #aaaaaa;
+                width: 18px;
+                height: 18px;
+                margin: -6px 0;
+                border-radius: 9px;
+            }
             QSlider::handle:horizontal:focus {
                 background: #f39c12;
+            }
+            QSlider::sub-page:horizontal {
+                background: #2980b9;
+                border-radius: 3px;
             }
             QListWidget {
                 background-color: #222222;
@@ -83,8 +102,11 @@ class OperatorDashboard(QMainWindow):
                 font-weight: normal;
                 font-size: 14px;
             }
-            QListWidget::item:focus {
+            QListWidget::item:selected {
                 background-color: #34495e;
+                color: white;
+            }
+            QListWidget::item:focus {
                 border: 2px solid #f39c12;
             }
         """)
@@ -105,6 +127,7 @@ class OperatorDashboard(QMainWindow):
         
         # Connect hardware status signals
         self.serial_thread.status_received.connect(self.update_serial_status)
+        self.serial_thread.button_pressed.connect(self.on_hardware_button_pressed)
         self.camera_thread.status_changed.connect(self.update_camera_status)
 
         # Start background threads
@@ -114,6 +137,9 @@ class OperatorDashboard(QMainWindow):
 
         self.session_start_time = 0.0
         self.current_metrics = {"total": 0, "accepted": 0, "rejected": 0, "yield": 100.0, "proc_time_ms": 0.0}
+        
+        self.stm32_ready = False
+        self.camera_ready = False
         
         self.last_trigger_time = 0.0
         self.watchdog_timer = QTimer()
@@ -220,13 +246,7 @@ class OperatorDashboard(QMainWindow):
         self.home_stats_group.setLayout(stats_layout)
         self.left_panel.addWidget(self.home_stats_group)
 
-        # History button
-        self.btn_go_history = QPushButton("View Session History")
-        self.btn_go_history.setStyleSheet("background-color: #34495e; color: white;")
-        self.btn_go_history.clicked.connect(self.go_to_history_screen)
-        self.left_panel.addWidget(self.btn_go_history)
-        
-        self.left_panel.addStretch() # Prevents expanding labels from pushing the history button off-screen
+        self.left_panel.addStretch()
 
         layout.addLayout(self.left_panel)
 
@@ -243,7 +263,18 @@ class OperatorDashboard(QMainWindow):
 
         # Flavour Dropdown
         self.combo_flavour = QComboBox()
-        self.combo_flavour.addItems(["Necto", "Lemonade", "Orange Crush", "Kik Cola", "Cream Soda"])
+        self.combo_flavour.addItems([
+            "Cream Soda",
+            "Dry Ginger Ale",
+            "Ginger Beer",
+            "KIK Cola",
+            "Lemonade",
+            "Necto",
+            "Orange Barley",
+            "Orange Crush",
+            "Soda",
+            "Tonic"
+        ])
         self.combo_flavour.currentTextChanged.connect(self.on_home_product_changed)
 
         # Limit Value Text Display Only (No slider on Home)
@@ -272,23 +303,6 @@ class OperatorDashboard(QMainWindow):
         self.running_metrics_group.setLayout(run_layout)
         self.right_panel.addWidget(self.running_metrics_group)
 
-        # Control Buttons
-        self.btn_setup = QPushButton("Configure Setup")
-        self.btn_setup.setStyleSheet("background-color: #d35400; color: white;") # More prominent color for setup
-        self.btn_setup.clicked.connect(self.go_to_setup_screen)
-        
-        self.btn_start = QPushButton("Start Run")
-        self.btn_start.setStyleSheet("background-color: #27ae60; color: white;")
-        self.btn_start.clicked.connect(self.on_start_clicked)
-
-        self.btn_end = QPushButton("End Run")
-        self.btn_end.setStyleSheet("background-color: #c0392b; color: white;")
-        self.btn_end.clicked.connect(self.on_end_clicked)
-
-        self.right_panel.addWidget(self.btn_setup)
-        self.right_panel.addWidget(self.btn_start)
-        self.right_panel.addWidget(self.btn_end)
-
         # Controller Connection Status
         self.serial_group = QGroupBox("Hardware Status")
         serial_lay = QVBoxLayout()
@@ -300,25 +314,44 @@ class OperatorDashboard(QMainWindow):
         self.right_panel.addWidget(self.serial_group)
 
         self.right_panel.addStretch()
+
+        # History button
+        self.btn_go_history = QPushButton("View Session History")
+        self.btn_go_history.setStyleSheet("background-color: #34495e; color: white;")
+        self.btn_go_history.clicked.connect(self.go_to_history_screen)
+        self.right_panel.addWidget(self.btn_go_history)
+        
+        # Control Buttons
+        self.btn_setup = QPushButton("Configure Setup")
+        self.btn_setup.setStyleSheet("background-color: #d35400; color: white;") 
+        self.btn_setup.clicked.connect(self.go_to_setup_screen)
+        self.right_panel.addWidget(self.btn_setup)
+        
+        self.btn_start = QPushButton("Start Run")
+        self.btn_start.setStyleSheet("background-color: #27ae60; color: white;")
+        self.btn_start.clicked.connect(self.on_start_clicked)
+        self.right_panel.addWidget(self.btn_start)
+
+        self.btn_end = QPushButton("End Run")
+        self.btn_end.setStyleSheet("background-color: #c0392b; color: white;")
+        self.btn_end.clicked.connect(self.on_end_clicked)
+        self.right_panel.addWidget(self.btn_end)
+
         layout.addLayout(self.right_panel)
 
     def init_history_screen(self):
         self.history_widget = QWidget()
         layout = QVBoxLayout(self.history_widget)
 
-        # Reposition back button to top-left
-        top_layout = QHBoxLayout()
-        btn_back = QPushButton("← Back to Home")
-        btn_back.setStyleSheet("background-color: #7f8c8d; color: white; max-width: 250px;")
-        btn_back.clicked.connect(self.go_to_home_screen)
-        top_layout.addWidget(btn_back)
-        top_layout.addStretch()
-        layout.addLayout(top_layout)
-
         title = QLabel("Historical Inspection Sessions")
         title.setProperty("class", "TopicLabel")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
+        
+        lbl_instruction = QLabel("(Use Left/Right buttons to scroll through records)")
+        lbl_instruction.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        lbl_instruction.setStyleSheet("color: #aaaaaa; font-style: italic;")
+        layout.addWidget(lbl_instruction)
 
         splitter = QSplitter(Qt.Orientation.Horizontal)
         splitter.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -358,6 +391,14 @@ class OperatorDashboard(QMainWindow):
         
         splitter.setSizes([350, 450])
         layout.addWidget(splitter)
+        
+        bottom_layout = QHBoxLayout()
+        bottom_layout.addStretch()
+        self.btn_hist_back = QPushButton("← Back to Home")
+        self.btn_hist_back.setStyleSheet("background-color: #7f8c8d; color: white; max-width: 250px;")
+        self.btn_hist_back.clicked.connect(self.go_to_home_screen)
+        bottom_layout.addWidget(self.btn_hist_back)
+        layout.addLayout(bottom_layout)
 
     def init_setup_screen(self):
         self.setup_widget = QWidget()
@@ -392,7 +433,18 @@ class OperatorDashboard(QMainWindow):
         self.combo_setup_size.currentTextChanged.connect(self.on_setup_visual_update)
 
         self.combo_setup_flavour = QComboBox()
-        self.combo_setup_flavour.addItems(["Necto", "Lemonade", "Orange Crush", "Kik Cola", "Cream Soda"])
+        self.combo_setup_flavour.addItems([
+            "Cream Soda",
+            "Dry Ginger Ale",
+            "Ginger Beer",
+            "KIK Cola",
+            "Lemonade",
+            "Necto",
+            "Orange Barley",
+            "Orange Crush",
+            "Soda",
+            "Tonic"
+        ])
         self.combo_setup_flavour.currentTextChanged.connect(self.on_setup_visual_update)
 
         self.slider_setup_threshold = QSlider(Qt.Orientation.Horizontal)
@@ -411,6 +463,8 @@ class OperatorDashboard(QMainWindow):
         self.setup_config_group.setLayout(setup_form)
         self.setup_right_panel.addWidget(self.setup_config_group)
 
+        self.setup_right_panel.addStretch()
+
         # Setup buttons
         self.btn_setup_save = QPushButton("Save Specification")
         self.btn_setup_save.setStyleSheet("background-color: #27ae60; color: white;")
@@ -423,7 +477,6 @@ class OperatorDashboard(QMainWindow):
         self.setup_right_panel.addWidget(self.btn_setup_save)
         self.setup_right_panel.addWidget(self.btn_setup_back)
 
-        self.setup_right_panel.addStretch()
         layout.addLayout(self.setup_right_panel)
 
     # --- Home screen preview drawer ---
@@ -478,6 +531,7 @@ class OperatorDashboard(QMainWindow):
             self.btn_start.show()
             self.btn_end.hide()
             self.watchdog_timer.stop()
+            self.check_start_button_status()
 
             self.on_home_product_changed()
 
@@ -583,6 +637,7 @@ class OperatorDashboard(QMainWindow):
         
         self.on_setup_visual_update()
         self.stacked_widget.setCurrentIndex(2)
+        self.combo_setup_size.setFocus()
 
     @pyqtSlot()
     def on_setup_save_clicked(self):
@@ -695,13 +750,98 @@ class OperatorDashboard(QMainWindow):
             self.btn_end.setText(f"End Run (Locked {countdown}s)")
             self.btn_end.setStyleSheet("background-color: #552222; color: #888888;")
 
+    def check_start_button_status(self):
+        if self.ui_state == "HOME":
+            if self.stm32_ready and self.camera_ready:
+                self.btn_start.setEnabled(True)
+                self.btn_start.setText("Start Run")
+                self.btn_start.setStyleSheet("background-color: #27ae60; color: white;")
+            else:
+                self.btn_start.setEnabled(False)
+                self.btn_start.setText("Start Run (Hardware Not Ready)")
+                self.btn_start.setStyleSheet("background-color: #552222; color: #888888;")
+
     @pyqtSlot(str)
     def update_serial_status(self, status):
         self.lbl_serial.setText(f"STM32: {status}")
+        self.stm32_ready = "Connected" in status
+        self.check_start_button_status()
 
     @pyqtSlot(str)
     def update_camera_status(self, status):
         self.lbl_camera.setText(status)
+        self.camera_ready = "Connected" in status or "Ready" in status
+        self.check_start_button_status()
+
+    @pyqtSlot(int)
+    def on_hardware_button_pressed(self, btn_id):
+        """
+        D-pad navigation - clean Tab-based model:
+          Up   (1) = Shift+Tab  (prev widget)
+          Down (2) = Tab        (next widget)
+          Left (3) = cycle backward / decrease value
+          Right(4) = cycle forward  / increase value
+          OK   (5) = click focused button
+          S    (6) = Start or End run directly
+        """
+        focused = QApplication.focusWidget()
+        if not focused:
+            return
+
+        # ── Button 6: Start / End shortcut ───────────────────────────────────
+        if btn_id == 6:
+            if self.ui_state == "HOME" and self.btn_start.isEnabled():
+                self.btn_start.click()
+            elif self.ui_state == "RUNNING" and self.btn_end.isEnabled():
+                self.btn_end.click()
+            return
+
+        # ── Up / Down  →  Shift+Tab / Tab (Move between widgets) ────────────
+        if btn_id == 1:   # Up → Reverse Tab
+            focused.focusPreviousChild()
+            return
+        if btn_id == 2:   # Down → Tab
+            focused.focusNextChild()
+            return
+
+        # ── Left / Right  →  cycle values ────────────────────────────────────
+        if btn_id in (3, 4):
+            forward = (btn_id == 4)
+
+            if isinstance(focused, QComboBox):
+                n = focused.count()
+                if n:
+                    focused.setCurrentIndex((focused.currentIndex() + (1 if forward else -1)) % n)
+                return
+
+            if isinstance(focused, QSlider):
+                focused.setValue(focused.value() + (1 if forward else -1))
+                return
+
+            # History list: Left/Right scroll records
+            if isinstance(focused, QListWidget) and focused.count():
+                row = focused.currentRow()
+                if forward:
+                    focused.setCurrentRow(min(row + 1, focused.count() - 1))
+                else:
+                    focused.setCurrentRow(max(row - 1, 0))
+                return
+
+            # Anything else: treat as Tab navigation
+            if forward:
+                focused.focusNextChild()
+            else:
+                focused.focusPreviousChild()
+            return
+
+        # ── OK (5)  →  click button / confirm ────────────────────────────────
+        if btn_id == 5:
+            if isinstance(focused, QPushButton):
+                focused.click()
+            # ComboBox and Slider already changed via L/R — no popup needed
+            return
+
+
 
     # --- Screen Switching & Navigation ---
     def go_to_history_screen(self):
@@ -712,12 +852,17 @@ class OperatorDashboard(QMainWindow):
             list_item = QListWidgetItem(item_txt)
             list_item.setData(Qt.ItemDataRole.UserRole, idx)
             self.history_list.addItem(list_item)
-        
         self.stacked_widget.setCurrentIndex(1)
+        if self.history_list.count() > 0:
+            self.history_list.setCurrentRow(0)
+            self.history_list.setFocus()
+        else:
+            self.btn_hist_back.setFocus()
 
     def go_to_home_screen(self):
         self.stacked_widget.setCurrentIndex(0)
         self.transition_to_state("HOME")
+        self.btn_setup.setFocus()
 
     def on_history_selection_changed(self):
         selected_items = self.history_list.selectedItems()
@@ -768,8 +913,20 @@ class OperatorDashboard(QMainWindow):
         self.serial_thread.stop()
         event.accept()
 
+class KioskFilter(QObject):
+    """Blocks all native physical keyboard inputs to simulate a true hardware kiosk."""
+    def eventFilter(self, obj, event):
+        if event.type() in (QEvent.Type.KeyPress, QEvent.Type.KeyRelease):
+            return True
+        return super().eventFilter(obj, event)
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    
+    # Install the Kiosk Filter to globally block physical keyboard keys
+    kiosk_filter = KioskFilter()
+    app.installEventFilter(kiosk_filter)
+    
     window = OperatorDashboard()
     window.show()
     sys.exit(app.exec())
