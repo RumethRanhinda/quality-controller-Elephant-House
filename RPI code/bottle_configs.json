@@ -1,19 +1,122 @@
 {
-    "500ml_Kik Cola": 253,
-    "500ml_Lemonade": 320,
-    "500ml_Necto": 290,
-    "500ml_Cream Soda": 310,
-    "500ml_Orange Crush": 300,
-    "1l_Kik Cola": 277,
-    "1l_Lemonade": 350,
-    "1l_Necto": 360,
-    "1l_Cream Soda": 340,
-    "1l_Orange Crush": 295,
-    "1.5l_Kik Cola": 400,
-    "1.5l_Lemonade": 410,
-    "1.5l_Necto": 420,
-    "1.5l_Cream Soda": 400,
-    "1.5l_Orange Crush": 410,
-    "500ml_Ginger Beer": 300,
-    "1.5l_Orange Barley": 252
+    "500ml_Cream Soda": {
+        "threshold": 280,
+        "exposure_us": 6000
+    },
+    "500ml_Dry Ginger Ale": {
+        "threshold": 295,
+        "exposure_us": 6000
+    },
+    "500ml_Ginger Beer": {
+        "threshold": 290,
+        "exposure_us": 40000
+    },
+    "500ml_KIK Cola": {
+        "threshold": 300,
+        "exposure_us": 6000
+    },
+    "500ml_Lemonade": {
+        "threshold": 285,
+        "exposure_us": 6000
+    },
+    "500ml_Necto": {
+        "threshold": 292,
+        "exposure_us": 6000
+    },
+    "500ml_Orange Barley": {
+        "threshold": 310,
+        "exposure_us": 6000
+    },
+    "500ml_Orange Crush": {
+        "threshold": 305,
+        "exposure_us": 6000
+    },
+    "500ml_Soda": {
+        "threshold": 345,
+        "exposure_us": 6000
+    },
+    "500ml_Tonic": {
+        "threshold": 285,
+        "exposure_us": 6000
+    },
+    "1l_Cream Soda": {
+        "threshold": 350,
+        "exposure_us": 6000
+    },
+    "1l_Dry Ginger Ale": {
+        "threshold": 340,
+        "exposure_us": 6000
+    },
+    "1l_Ginger Beer": {
+        "threshold": 345,
+        "exposure_us": 40000
+    },
+    "1l_KIK Cola": {
+        "threshold": 355,
+        "exposure_us": 6000
+    },
+    "1l_Lemonade": {
+        "threshold": 360,
+        "exposure_us": 6000
+    },
+    "1l_Necto": {
+        "threshold": 348,
+        "exposure_us": 6000
+    },
+    "1l_Orange Barley": {
+        "threshold": 362,
+        "exposure_us": 6000
+    },
+    "1l_Orange Crush": {
+        "threshold": 350,
+        "exposure_us": 6000
+    },
+    "1l_Soda": {
+        "threshold": 340,
+        "exposure_us": 6000
+    },
+    "1l_Tonic": {
+        "threshold": 345,
+        "exposure_us": 6000
+    },
+    "1.5l_Cream Soda": {
+        "threshold": 410,
+        "exposure_us": 6000
+    },
+    "1.5l_Dry Ginger Ale": {
+        "threshold": 415,
+        "exposure_us": 6000
+    },
+    "1.5l_Ginger Beer": {
+        "threshold": 405,
+        "exposure_us": 40000
+    },
+    "1.5l_KIK Cola": {
+        "threshold": 420,
+        "exposure_us": 6000
+    },
+    "1.5l_Lemonade": {
+        "threshold": 400,
+        "exposure_us": 6000
+    },
+    "1.5l_Necto": {
+        "threshold": 408,
+        "exposure_us": 6000
+    },
+    "1.5l_Orange Barley": {
+        "threshold": 425,
+        "exposure_us": 6000
+    },
+    "1.5l_Orange Crush": {
+        "threshold": 412,
+        "exposure_us": 6000
+    },
+    "1.5l_Soda": {
+        "threshold": 402,
+        "exposure_us": 6000
+    },
+    "1.5l_Tonic": {
+        "threshold": 405,
+        "exposure_us": 6000
+    }
 }

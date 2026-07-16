@@ -16,9 +16,7 @@ import numpy as np
 from vision_pipeline import VisionThread
 from stm32_comm import SerialThread
 from camera_basler import CameraThread
-
-HISTORY_FILE = "session_history.json"
-BOTTLE_CONFIGS_FILE = "bottle_configs.json"
+from data_manager import DataManager
 
 class OperatorDashboard(QMainWindow):
     def __init__(self):
@@ -111,9 +109,13 @@ class OperatorDashboard(QMainWindow):
             }
         """)
 
-        # Load databases
-        self.history = self.load_history()
-        self.bottle_configs = self.load_bottle_configs()
+        # Load databases via DataManager
+        self.data_manager = DataManager()
+        self.history = self.data_manager.load_history()
+        self.bottle_configs = self.data_manager.load_bottle_configs()
+
+        # Ensure assets directory exists for storing reference photos
+        os.makedirs("assets", exist_ok=True)
 
         # Thread instances
         self.raw_queue = queue.Queue()
@@ -163,46 +165,6 @@ class OperatorDashboard(QMainWindow):
 
         # Transition to initial state
         self.transition_to_state("HOME")
-
-    # --- Database Operations ---
-    def load_history(self):
-        if os.path.exists(HISTORY_FILE):
-            try:
-                with open(HISTORY_FILE, "r") as f:
-                    return json.load(f)
-            except Exception:
-                return []
-        return []
-
-    def save_history(self):
-        try:
-            with open(HISTORY_FILE, "w") as f:
-                json.dump(self.history, f, indent=4)
-        except Exception as e:
-            print(f"Error saving history: {e}")
-
-    def load_bottle_configs(self):
-        if os.path.exists(BOTTLE_CONFIGS_FILE):
-            try:
-                with open(BOTTLE_CONFIGS_FILE, "r") as f:
-                    return json.load(f)
-            except Exception:
-                pass
-        # Default fallback configurations
-        return {
-            "500ml_Kik Cola": 300,
-            "500ml_Lemonade": 280,
-            "500ml_Necto": 290,
-            "1l_Orange Crush": 350,
-            "1.5l_Cream Soda": 400
-        }
-
-    def save_bottle_configs(self):
-        try:
-            with open(BOTTLE_CONFIGS_FILE, "w") as f:
-                json.dump(self.bottle_configs, f, indent=4)
-        except Exception as e:
-            print(f"Error saving bottle configs: {e}")
 
     # --- UI Initialization ---
     def init_main_dashboard(self):
@@ -480,9 +442,50 @@ class OperatorDashboard(QMainWindow):
         layout.addLayout(self.setup_right_panel)
 
     # --- Home screen preview drawer ---
+    def get_reference_preview(self, size, flavour, threshold):
+        """Loads a static reference photo from assets/ if it exists; otherwise generates a dummy preview."""
+        png_path = f"assets/{size}_{flavour}.png"
+        jpg_path = f"assets/{size}_{flavour}.jpg"
+        
+        target_path = None
+        if os.path.exists(png_path):
+            target_path = png_path
+        elif os.path.exists(jpg_path):
+            target_path = jpg_path
+
+        if target_path:
+            img = cv2.imread(target_path)
+            if img is not None:
+                # Resize to standard size 800x600 for consistency
+                img = cv2.resize(img, (800, 600))
+                # Draw the green target line
+                cv2.line(img, (50, threshold), (750, threshold), (0, 255, 0), 2)
+                cv2.putText(
+                    img,
+                    f"Reference Photo: {size} {flavour}",
+                    (100, 50),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.8,
+                    (255, 255, 255),
+                    2,
+                )
+                cv2.putText(
+                    img,
+                    f"Target: {threshold}px",
+                    (100, threshold - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6,
+                    (0, 255, 0),
+                    2,
+                )
+                return img
+
+        # Fallback to generated preview if file not found or load fails
+        return VisionThread.generate_preview(size, flavour, threshold)
+
     def show_home_preview(self, size, flavour, threshold):
         """Draws the preview of the locked active configuration on the Home screen."""
-        preview_img = VisionThread.generate_preview(size, flavour, threshold)
+        preview_img = self.get_reference_preview(size, flavour, threshold)
         
         # Display it on main feed screen
         rgb_image = cv2.cvtColor(preview_img, cv2.COLOR_BGR2RGB)
@@ -611,8 +614,8 @@ class OperatorDashboard(QMainWindow):
 
         self.lbl_setup_threshold_val.setText(f"{threshold} px")
 
-        # Generate setup preview image
-        preview_img = VisionThread.generate_preview(size, flavour, threshold)
+        # Load/Generate setup preview image
+        preview_img = self.get_reference_preview(size, flavour, threshold)
         
         # Display it on Setup Screen label
         rgb_image = cv2.cvtColor(preview_img, cv2.COLOR_BGR2RGB)
@@ -650,7 +653,7 @@ class OperatorDashboard(QMainWindow):
             self.bottle_configs[key]["threshold"] = int(threshold)
         else:
             self.bottle_configs[key] = int(threshold)
-        self.save_bottle_configs()
+        self.data_manager.save_bottle_configs(self.bottle_configs)
         
         self.combo_size.setCurrentText(size)
         self.combo_flavour.setCurrentText(flavour)
@@ -694,7 +697,7 @@ class OperatorDashboard(QMainWindow):
         }
 
         self.history.insert(0, session_record)
-        self.save_history()
+        self.data_manager.save_history(self.history)
 
         self.transition_to_state("HOME")
 
