@@ -32,7 +32,7 @@
         "exposure_us": 6000
     },
     "500ml_Soda": {
-        "threshold": 345,
+        "threshold": 693,
         "exposure_us": 6000
     },
     "500ml_Tonic": {

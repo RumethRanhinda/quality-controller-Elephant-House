@@ -163,37 +163,36 @@ class VisionThread(QThread):
 
     @staticmethod
     def generate_preview(size, flavour, threshold):
-        """Generates a static dummy image for the GUI Setup screen preview."""
-
-        img = np.ones((600, 800, 3), dtype=np.uint8) * 40
+        """Generates a static dummy image for the GUI Setup screen preview (1920x1200)."""
+        img = np.ones((1200, 1920, 3), dtype=np.uint8) * 40
 
         # Draw threshold line
         cv2.line(
             img,
             (100, threshold),
-            (700, threshold),
+            (1820, threshold),
             (0, 255, 0),
-            2
+            4
         )
 
         cv2.putText(
             img,
             f"Simulated Camera View: {size} {flavour}",
-            (150, 50),
+            (150, 100),
             cv2.FONT_HERSHEY_SIMPLEX,
-            0.8,
+            2.0,
             (255, 255, 255),
-            2,
+            4,
         )
 
         cv2.putText(
             img,
             f"Target: {threshold}px",
-            (150, threshold - 10),
+            (150, threshold - 20),
             cv2.FONT_HERSHEY_SIMPLEX,
-            0.6,
+            1.5,
             (0, 255, 0),
-            2,
+            3,
         )
 
         return img

@@ -178,10 +178,10 @@ class OperatorDashboard(QMainWindow):
         self.left_title.setProperty("class", "TopicLabel")
         self.left_panel.addWidget(self.left_title)
 
-        # Left display (Preview image / rejection logs) - Fixed size to prevent layout growing
+        # Left display (Preview image / rejection logs) - Fixed size (16:10 ratio) to prevent layout growing
         self.left_display = QLabel()
         self.left_display.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.left_display.setFixedSize(512, 384)
+        self.left_display.setFixedSize(512, 320)
         self.left_display.setStyleSheet("background-color: #1e1e1e; border: 2px solid #333333;")
         self.left_panel.addWidget(self.left_display)
 
@@ -373,10 +373,10 @@ class OperatorDashboard(QMainWindow):
         self.setup_title.setProperty("class", "TopicLabel")
         self.setup_left_panel.addWidget(self.setup_title)
 
-        # Setup preview visual label - Fixed size
+        # Setup preview visual label - Fixed size (16:10 ratio)
         self.setup_display = QLabel()
         self.setup_display.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.setup_display.setFixedSize(512, 384)
+        self.setup_display.setFixedSize(512, 320)
         self.setup_display.setStyleSheet("background-color: #1e1e1e; border: 2px solid #333333;")
         self.setup_left_panel.addWidget(self.setup_display)
         
@@ -410,7 +410,7 @@ class OperatorDashboard(QMainWindow):
         self.combo_setup_flavour.currentTextChanged.connect(self.on_setup_visual_update)
 
         self.slider_setup_threshold = QSlider(Qt.Orientation.Horizontal)
-        self.slider_setup_threshold.setRange(150, 480)
+        self.slider_setup_threshold.setRange(0, 1200)
         self.slider_setup_threshold.setValue(300)
         self.slider_setup_threshold.valueChanged.connect(self.on_setup_visual_update)
 
@@ -456,27 +456,27 @@ class OperatorDashboard(QMainWindow):
         if target_path:
             img = cv2.imread(target_path)
             if img is not None:
-                # Resize to standard size 800x600 for consistency
-                img = cv2.resize(img, (800, 600))
-                # Draw the green target line
-                cv2.line(img, (50, threshold), (750, threshold), (0, 255, 0), 2)
+                # Resize to standard size 1920x1200 for consistency
+                img = cv2.resize(img, (1920, 1200))
+                # Draw the green target line on the 1920x1200 canvas
+                cv2.line(img, (100, threshold), (1820, threshold), (0, 255, 0), 4)
                 cv2.putText(
                     img,
                     f"Reference Photo: {size} {flavour}",
-                    (100, 50),
+                    (150, 100),
                     cv2.FONT_HERSHEY_SIMPLEX,
-                    0.8,
+                    2.0,
                     (255, 255, 255),
-                    2,
+                    4,
                 )
                 cv2.putText(
                     img,
                     f"Target: {threshold}px",
-                    (100, threshold - 10),
+                    (150, threshold - 20),
                     cv2.FONT_HERSHEY_SIMPLEX,
-                    0.6,
+                    1.5,
                     (0, 255, 0),
-                    2,
+                    3,
                 )
                 return img
 
@@ -493,7 +493,7 @@ class OperatorDashboard(QMainWindow):
         bytes_per_line = ch * w
         qt_img = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
         scaled_pixmap = QPixmap.fromImage(qt_img).scaled(
-            512, 384, 
+            512, 320, 
             Qt.AspectRatioMode.KeepAspectRatio, 
             Qt.TransformationMode.SmoothTransformation
         )
@@ -623,7 +623,7 @@ class OperatorDashboard(QMainWindow):
         bytes_per_line = ch * w
         qt_img = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
         scaled_pixmap = QPixmap.fromImage(qt_img).scaled(
-            512, 384, 
+            512, 320, 
             Qt.AspectRatioMode.KeepAspectRatio, 
             Qt.TransformationMode.SmoothTransformation
         )
@@ -897,7 +897,7 @@ class OperatorDashboard(QMainWindow):
         qt_img = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
         
         scaled_pixmap = QPixmap.fromImage(qt_img).scaled(
-            512, 384, 
+            512, 320, 
             Qt.AspectRatioMode.KeepAspectRatio, 
             Qt.TransformationMode.SmoothTransformation
         )
