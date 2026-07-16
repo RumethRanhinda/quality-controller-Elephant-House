@@ -1,5 +1,17 @@
 [
     {
+        "timestamp": "2026-07-17 02:03:14",
+        "end_timestamp": "2026-07-17 02:04:53",
+        "bottle_size": "500ml",
+        "flavour": "Soda",
+        "threshold": 704,
+        "total": 168,
+        "accepted": 0,
+        "rejected": 168,
+        "yield": 0.0,
+        "duration_sec": 98
+    },
+    {
         "timestamp": "2026-07-16 02:41:56",
         "end_timestamp": "2026-07-16 02:42:14",
         "bottle_size": "1.5l",
