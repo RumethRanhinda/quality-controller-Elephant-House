@@ -849,7 +849,7 @@ class OperatorDashboard(QMainWindow):
     # --- Screen Switching & Navigation ---
     def go_to_history_screen(self):
         self.history_list.clear()
-        self.history = self.load_history()
+        self.history = self.data_manager.load_history()
         for idx, entry in enumerate(self.history):
             item_txt = f"{entry.get('timestamp')} - {entry.get('bottle_size')} {entry.get('flavour')}"
             list_item = QListWidgetItem(item_txt)
