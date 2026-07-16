@@ -44,8 +44,8 @@ class CameraThread(QThread):
             # self.camera.TriggerActivation.Value = "RisingEdge" # Only used when TriggerSource is "Line1"
 
             # 4. Set Shutter Speed (Exposure Time in microseconds)
-            # 240us guarantees no motion blur at 10,000 bottles/hour
-            self.camera.ExposureTime.Value = 3000
+            # Use the currently active exposure (defaults to 3000 if not in a run)
+            self.camera.ExposureTime.Value = getattr(self, 'current_exposure', 3000)
 
             print("[CAMERA] Hardware Trigger Configured: Waiting for STM32 pulse on Line 1.")
 
