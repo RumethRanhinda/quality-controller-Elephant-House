@@ -8,7 +8,7 @@
         "exposure_us": 6000
     },
     "500ml_Ginger Beer": {
-        "threshold": 290,
+        "threshold": 292,
         "exposure_us": 40000
     },
     "500ml_KIK Cola": {
@@ -32,7 +32,7 @@
         "exposure_us": 6000
     },
     "500ml_Soda": {
-        "threshold": 704,
+        "threshold": 682,
         "exposure_us": 6000
     },
     "500ml_Tonic": {
