@@ -1,5 +1,53 @@
 [
     {
+        "timestamp": "2026-07-17 14:49:15",
+        "end_timestamp": "2026-07-17 15:07:08",
+        "bottle_size": "500ml",
+        "flavour": "Soda",
+        "threshold": 682,
+        "total": 1505,
+        "accepted": 1194,
+        "rejected": 311,
+        "yield": 79.33554817275747,
+        "duration_sec": 1072
+    },
+    {
+        "timestamp": "2026-07-17 14:29:12",
+        "end_timestamp": "2026-07-17 14:31:56",
+        "bottle_size": "500ml",
+        "flavour": "Soda",
+        "threshold": 704,
+        "total": 312,
+        "accepted": 70,
+        "rejected": 242,
+        "yield": 22.435897435897438,
+        "duration_sec": 163
+    },
+    {
+        "timestamp": "2026-07-17 14:19:35",
+        "end_timestamp": "2026-07-17 14:20:26",
+        "bottle_size": "500ml",
+        "flavour": "Ginger Beer",
+        "threshold": 292,
+        "total": 83,
+        "accepted": 3,
+        "rejected": 80,
+        "yield": 3.614457831325301,
+        "duration_sec": 50
+    },
+    {
+        "timestamp": "2026-07-17 02:18:30",
+        "end_timestamp": "2026-07-17 02:18:46",
+        "bottle_size": "500ml",
+        "flavour": "Soda",
+        "threshold": 704,
+        "total": 21,
+        "accepted": 0,
+        "rejected": 21,
+        "yield": 0.0,
+        "duration_sec": 16
+    },
+    {
         "timestamp": "2026-07-17 02:03:14",
         "end_timestamp": "2026-07-17 02:04:53",
         "bottle_size": "500ml",
