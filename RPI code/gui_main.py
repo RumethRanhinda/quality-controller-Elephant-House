@@ -126,6 +126,7 @@ class OperatorDashboard(QMainWindow):
         # Connect vision signals
         self.vision_thread.rejection_occurred.connect(self.on_rejection_occurred)
         self.vision_thread.metrics_ready.connect(self.on_metrics_ready)
+        self.vision_thread.ejector_command.connect(self.serial_thread.send_ejector_command)
         
         # Connect hardware status signals
         self.serial_thread.status_received.connect(self.update_serial_status)
