@@ -39,9 +39,8 @@ class CameraThread(QThread):
             self.camera.TriggerMode.Value = "On"
             
             # "Line1" is the physical opto-coupled GPIO input pin on the Basler camera
-            # Set to "Software" for testing. Normally this should be "Line1" for hardware GPIO.
-            self.camera.TriggerSource.Value = "Software" 
-            # self.camera.TriggerActivation.Value = "RisingEdge" # Only used when TriggerSource is "Line1"
+            self.camera.TriggerSource.Value = "Line1" 
+            self.camera.TriggerActivation.Value = "RisingEdge"
 
             # 4. Set Shutter Speed (Exposure Time in microseconds)
             # Use the currently active exposure (defaults to 3000 if not in a run)
@@ -81,11 +80,7 @@ class CameraThread(QThread):
             
             try:
                 if self.is_running:
-                    # --- TESTING MODE (SOFTWARE TRIGGER) ---
-                    if self.camera.TriggerSource.Value == "Software":
-                        if self.camera.WaitForFrameTriggerReady(100, pylon.TimeoutHandling_Return):
-                            self.camera.ExecuteSoftwareTrigger()
-                            time.sleep(0.5) 
+
                     
                     grabResult = self.camera.RetrieveResult(100, pylon.TimeoutHandling_Return)
                     

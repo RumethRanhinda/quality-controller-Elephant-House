@@ -14,7 +14,6 @@ class SerialThread(QThread):
         self.baudrate = baudrate
         self.is_running = True
         self.ser = None
-        self.sock = None
 
     def run(self):
         """Background loop listening for button presses."""
@@ -25,11 +24,7 @@ class SerialThread(QThread):
             print(f"[UART] Listening on {self.port} at {self.baudrate} baud...")
         except serial.SerialException as e:
             print(f"[UART] Failed to open {self.port}: {e}")
-            print(f"[UART] Falling back to UDP Simulator on port 12345...")
-            self.status_received.emit("Connected (Simulated UDP)")
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.sock.bind(('127.0.0.1', 12345))
-            self.sock.settimeout(0.1)
+            self.status_received.emit("Connection Error")
             
         while self.is_running:
             if self.ser and self.ser.is_open:
@@ -43,17 +38,6 @@ class SerialThread(QThread):
                         print(f"[UART] Received 4-bit command: {hex(val)}")
                 else:
                     time.sleep(0.01) 
-            elif self.sock:
-                try:
-                    data, _ = self.sock.recvfrom(1024)
-                    if data:
-                        char = data.decode('utf-8').strip()
-                        if char.isdigit():
-                            val = int(char)
-                            self.button_pressed.emit(val)
-                            print(f"[SIMULATOR] Received: {val}")
-                except socket.timeout:
-                    pass
             else:
                 time.sleep(0.1)
 
