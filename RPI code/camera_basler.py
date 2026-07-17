@@ -38,8 +38,8 @@ class CameraThread(QThread):
             self.camera.TriggerSelector.Value = "FrameStart"
             self.camera.TriggerMode.Value = "On"
             
-            # "Line1" is the physical opto-coupled GPIO input pin on the Basler camera
-            self.camera.TriggerSource.Value = "Line1" 
+            # "Line3" corresponds to Pin 1 on this specific model's custom wiring
+            self.camera.TriggerSource.Value = "Line3" 
             self.camera.TriggerActivation.Value = "RisingEdge"
 
             # 4. Set Shutter Speed (Exposure Time in microseconds)
