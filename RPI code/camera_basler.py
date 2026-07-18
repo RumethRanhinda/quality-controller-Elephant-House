@@ -98,6 +98,10 @@ class CameraThread(QThread):
                         # Fallback for older pypylon versions
                         _ = self.camera.Width.GetValue()
             except genicam.GenericException as e:
+                if "timeout" in str(e).lower():
+                    # Timeouts are perfectly normal when waiting for a hardware trigger!
+                    continue
+                    
                 self.status_changed.emit("Camera: Disconnected unexpectedly!")
                 if self.camera is not None:
                     if self.camera.IsGrabbing():
