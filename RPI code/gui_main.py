@@ -144,8 +144,6 @@ class OperatorDashboard(QMainWindow):
         self.stm32_ready = False
         self.camera_ready = False
         
-        self.last_trigger_time = 0.0
-        self.vision_thread.trigger_received.connect(self.on_trigger_received)
         
         # Stacked widget for switching between Main Dashboard, History, and Setup Screens
         self.stacked_widget = QStackedWidget()
@@ -534,7 +532,6 @@ class OperatorDashboard(QMainWindow):
             self.btn_setup.show()
             self.btn_start.show()
             self.btn_end.hide()
-            self.watchdog_timer.stop()
             self.check_start_button_status()
 
             self.on_home_product_changed()
@@ -581,7 +578,6 @@ class OperatorDashboard(QMainWindow):
 
             # Initialize timestamps
             self.session_start_time = time.time()
-            self.last_trigger_time = time.time()
 
     # --- Actions / Callbacks ---
     @pyqtSlot()
@@ -673,7 +669,6 @@ class OperatorDashboard(QMainWindow):
     @pyqtSlot()
     def on_end_clicked(self):
         # Stop background pipelines
-        self.watchdog_timer.stop()
         self.camera_thread.stop_run()
         self.vision_thread.stop_pipeline()
 
@@ -738,11 +733,7 @@ class OperatorDashboard(QMainWindow):
             return
         self.update_run_metrics(metrics)
 
-    @pyqtSlot()
-    def on_trigger_received(self):
-        if self.ui_state != "RUNNING":
-            return
-        self.last_trigger_time = time.time()
+
 
 
 

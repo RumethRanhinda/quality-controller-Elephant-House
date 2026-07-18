@@ -51,6 +51,7 @@ class VisionThread(QThread):
             "yield": 100.0,
             "proc_time_ms": 0.0
         }
+        self.consecutive_failures = 0
         self.is_running = True
 
     def stop_pipeline(self):
@@ -148,10 +149,14 @@ class VisionThread(QThread):
 
         if is_pass:
             self.metrics["accepted"] += 1
+            self.consecutive_failures = 0
             self.ejector_command.emit('P')
         else:
             self.metrics["rejected"] += 1
+            self.consecutive_failures += 1
             self.ejector_command.emit('F')
+            if self.consecutive_failures == 3:
+                self.ejector_command.emit(chr(0x0B))
 
         self.metrics["yield"] = (self.metrics["accepted"] / self.metrics["total"]) * 100
 
