@@ -30,12 +30,24 @@ class SerialThread(QThread):
             if self.ser and self.ser.is_open:
                 # Check if data is waiting in the buffer
                 if self.ser.in_waiting > 0:
-                    raw_byte = self.ser.read(1)
+                    raw_data = self.ser.readline()
                     
-                    if raw_byte:
-                        val = raw_byte[0] & 0x0F 
-                        self.button_pressed.emit(val)
-                        print(f"[UART] Received 4-bit command: {hex(val)}")
+                    if raw_data:
+                        try:
+                            decoded = raw_data.decode('utf-8').strip()
+                            if decoded.startswith("BOTTLE_DETECTED:"):
+                                print(f"[UART] Ignored STM32 message: {decoded}")
+                            elif decoded.isdigit():
+                                self.button_pressed.emit(int(decoded))
+                            else:
+                                # Fallback: it might be a raw byte without a newline
+                                if len(raw_data) == 1:
+                                    val = raw_data[0] & 0x0F
+                                    self.button_pressed.emit(val)
+                        except UnicodeDecodeError:
+                            if len(raw_data) == 1:
+                                val = raw_data[0] & 0x0F
+                                self.button_pressed.emit(val)
                 else:
                     time.sleep(0.01) 
             else:

@@ -7,7 +7,7 @@ from PyQt6.QtCore import QThread, pyqtSignal
 
 class VisionThread(QThread):
     # Signals to communicate safely with the Main GUI
-    rejection_occurred = pyqtSignal(np.ndarray, dict, str)
+    frame_processed = pyqtSignal(np.ndarray, dict, bool, str)
     metrics_ready = pyqtSignal(dict)
     trigger_received = pyqtSignal()
 
@@ -219,13 +219,13 @@ class VisionThread(QThread):
                     # Send updated metrics
                     self.metrics_ready.emit(self.metrics)
 
-                    # Report rejection if necessary
-                    if not is_pass:
-                        self.rejection_occurred.emit(
-                            annotated_img,
-                            self.metrics,
-                            reason
-                        )
+                    # Report the processed frame directly to the GUI (Pass or Fail)
+                    self.frame_processed.emit(
+                        annotated_img,
+                        self.metrics,
+                        is_pass,
+                        reason
+                    )
 
                 except queue.Empty:
                     # No bottle available

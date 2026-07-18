@@ -124,7 +124,7 @@ class OperatorDashboard(QMainWindow):
         self.serial_thread = SerialThread()
 
         # Connect vision signals
-        self.vision_thread.rejection_occurred.connect(self.on_rejection_occurred)
+        self.vision_thread.frame_processed.connect(self.on_frame_processed)
         self.vision_thread.metrics_ready.connect(self.on_metrics_ready)
         self.vision_thread.ejector_command.connect(self.serial_thread.send_ejector_command)
         
@@ -719,13 +719,19 @@ class OperatorDashboard(QMainWindow):
         return self.get_threshold_for(key)
 
     # --- Thread Signals & Slots ---
-    @pyqtSlot(np.ndarray, dict, str)
-    def on_rejection_occurred(self, frame, metrics, reason):
+    @pyqtSlot(np.ndarray, dict, bool, str)
+    def on_frame_processed(self, frame, metrics, is_pass, reason):
         if self.ui_state != "RUNNING":
             return
         self.update_image_display(frame)
-        self.status_comment.setText(f"Rejection Comment: {reason}")
         self.update_run_metrics(metrics)
+        
+        if is_pass:
+            self.status_comment.setText("Status: PASS")
+            self.status_comment.setStyleSheet("color: #27ae60; font-weight: bold; font-size: 16px;")
+        else:
+            self.status_comment.setText(f"REJECTED: {reason}")
+            self.status_comment.setStyleSheet("color: #c0392b; font-weight: bold; font-size: 16px;")
 
     @pyqtSlot(dict)
     def on_metrics_ready(self, metrics):
@@ -892,10 +898,11 @@ class OperatorDashboard(QMainWindow):
 
     # --- UI Helper Operations ---
     def update_image_display(self, bgr_frame):
-        rgb_image = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2RGB)
-        h, w, ch = rgb_image.shape
+        # Keep a reference to the numpy array so PyQt's QImage doesn't lose the pointer!
+        self._current_rgb_image = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2RGB)
+        h, w, ch = self._current_rgb_image.shape
         bytes_per_line = ch * w
-        qt_img = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
+        qt_img = QImage(self._current_rgb_image.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
         
         scaled_pixmap = QPixmap.fromImage(qt_img).scaled(
             512, 320, 
