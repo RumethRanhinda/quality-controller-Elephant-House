@@ -81,14 +81,17 @@ class CameraThread(QThread):
             try:
                 if self.is_running:
 
-                    
-                    grabResult = self.camera.RetrieveResult(100, pylon.TimeoutHandling_Return)
-                    
-                    if grabResult.GrabSucceeded():
-                        img_array = grabResult.Array
-                        self.raw_queue.put(img_array.copy())
+                    try:
+                        grabResult = self.camera.RetrieveResult(100, pylon.TimeoutHandling_ThrowException)
+                        if grabResult.GrabSucceeded():
+                            img_array = grabResult.Array
+                            self.raw_queue.put(img_array.copy())
                         
-                    grabResult.Release()
+                        if grabResult.IsValid():
+                            grabResult.Release()
+                    except genicam.GenericException as e:
+                        if "timeout" not in str(e).lower():
+                            raise e
                 else:
                     time.sleep(0.05)
                     try:
@@ -98,6 +101,10 @@ class CameraThread(QThread):
                         # Fallback for older pypylon versions
                         _ = self.camera.Width.GetValue()
             except genicam.GenericException as e:
+                if "timeout" in str(e).lower():
+                    # Timeouts are perfectly normal when waiting for a hardware trigger!
+                    continue
+                    
                 self.status_changed.emit("Camera: Disconnected unexpectedly!")
                 if self.camera is not None:
                     if self.camera.IsGrabbing():
