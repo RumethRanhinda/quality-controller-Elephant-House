@@ -155,7 +155,10 @@ class VisionThread(QThread):
             self.metrics["rejected"] += 1
             self.consecutive_failures += 1
             self.ejector_command.emit('F')
-            if self.consecutive_failures == 3:
+            
+            if self.consecutive_failures >= 3:
+                import time
+                time.sleep(0.04)  # 40ms delay to prevent STM32 UART overrun
                 self.ejector_command.emit('B')
 
         self.metrics["yield"] = (self.metrics["accepted"] / self.metrics["total"]) * 100
