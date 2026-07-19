@@ -156,7 +156,7 @@ class VisionThread(QThread):
             self.consecutive_failures += 1
             self.ejector_command.emit('F')
             if self.consecutive_failures == 3:
-                self.ejector_command.emit(chr(0x0B))
+                self.ejector_command.emit('B')
 
         self.metrics["yield"] = (self.metrics["accepted"] / self.metrics["total"]) * 100
 
