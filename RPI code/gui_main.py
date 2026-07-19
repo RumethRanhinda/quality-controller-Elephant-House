@@ -777,9 +777,12 @@ class OperatorDashboard(QMainWindow):
 
         # ── Button 6: Start / End shortcut ───────────────────────────────────
         if btn_id == 6:
-            if self.ui_state == "HOME" and self.btn_start.isEnabled():
-                self.serial_thread.send_ejector_command(chr(0x0A))  # Send ACK
-                self.btn_start.click()
+            if self.ui_state == "HOME":
+                if self.stacked_widget.currentIndex() == 0 and self.btn_start.isEnabled():
+                    self.serial_thread.send_ejector_command('A')  # Send ACK
+                    self.btn_start.click()
+                else:
+                    self.serial_thread.send_ejector_command('N')  # Send Not ready
             elif self.ui_state == "RUNNING" and self.btn_end.isEnabled():
                 self.btn_end.click()
             return
