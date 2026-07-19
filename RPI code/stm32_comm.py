@@ -56,7 +56,12 @@ class SerialThread(QThread):
     def send_ejector_command(self, cmd_char):
         """Called by Vision Thread to send 'P' or 'F' to the STM32."""
         if self.ser and self.ser.is_open:
-            self.ser.write(cmd_char.encode('utf-8'))
+            try:
+                print(f"[UART] Sending to STM32: '{cmd_char}'")
+                self.ser.write(cmd_char.encode('utf-8'))
+                self.ser.flush()
+            except Exception as e:
+                print(f"[UART ERROR] Failed to send {cmd_char}: {e}")
 
     def stop(self):
         self.is_running = False
