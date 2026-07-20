@@ -46,7 +46,7 @@ class CameraThread(QThread):
             # Use the currently active exposure (defaults to 3000 if not in a run)
             self.camera.ExposureTime.Value = getattr(self, 'current_exposure', 3000)
 
-            print("[CAMERA] Hardware Trigger Configured: Waiting for STM32 pulse on Line 1.")
+            print("[CAMERA] Hardware Trigger Configured: Waiting for STM32 pulse on Line 3.")
 
         except genicam.GenericException as e:
             print(f"[CAMERA ERROR] Failed to configure camera: {e}")

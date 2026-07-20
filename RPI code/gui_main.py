@@ -144,10 +144,6 @@ class OperatorDashboard(QMainWindow):
         self.stm32_ready = False
         self.camera_ready = False
         
-        self.last_trigger_time = 0.0
-        self.watchdog_timer = QTimer()
-        self.watchdog_timer.timeout.connect(self.check_end_button_status)
-        self.vision_thread.trigger_received.connect(self.on_trigger_received)
         
         # Stacked widget for switching between Main Dashboard, History, and Setup Screens
         self.stacked_widget = QStackedWidget()
@@ -291,11 +287,13 @@ class OperatorDashboard(QMainWindow):
         self.right_panel.addWidget(self.btn_setup)
         
         self.btn_start = QPushButton("Start Run")
+        self.btn_start.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btn_start.setStyleSheet("background-color: #27ae60; color: white;")
         self.btn_start.clicked.connect(self.on_start_clicked)
         self.right_panel.addWidget(self.btn_start)
 
         self.btn_end = QPushButton("End Run")
+        self.btn_end.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btn_end.setStyleSheet("background-color: #c0392b; color: white;")
         self.btn_end.clicked.connect(self.on_end_clicked)
         self.right_panel.addWidget(self.btn_end)
@@ -534,7 +532,6 @@ class OperatorDashboard(QMainWindow):
             self.btn_setup.show()
             self.btn_start.show()
             self.btn_end.hide()
-            self.watchdog_timer.stop()
             self.check_start_button_status()
 
             self.on_home_product_changed()
@@ -563,9 +560,9 @@ class OperatorDashboard(QMainWindow):
             self.btn_start.hide()
             
             self.btn_end.show()
-            self.btn_end.setEnabled(False)
-            self.btn_end.setText("End Run (Locked)")
-            self.btn_end.setStyleSheet("background-color: #552222; color: #888888;")
+            self.btn_end.setEnabled(True)
+            self.btn_end.setText("End Run")
+            self.btn_end.setStyleSheet("background-color: #c0392b; color: white;")
 
             # Sync values to vision thread & run pipeline
             size = self.combo_size.currentText()
@@ -581,8 +578,6 @@ class OperatorDashboard(QMainWindow):
 
             # Initialize timestamps
             self.session_start_time = time.time()
-            self.last_trigger_time = time.time()
-            self.watchdog_timer.start(100)
 
     # --- Actions / Callbacks ---
     @pyqtSlot()
@@ -674,7 +669,6 @@ class OperatorDashboard(QMainWindow):
     @pyqtSlot()
     def on_end_clicked(self):
         # Stop background pipelines
-        self.watchdog_timer.stop()
         self.camera_thread.stop_run()
         self.vision_thread.stop_pipeline()
 
@@ -739,26 +733,9 @@ class OperatorDashboard(QMainWindow):
             return
         self.update_run_metrics(metrics)
 
-    @pyqtSlot()
-    def on_trigger_received(self):
-        if self.ui_state != "RUNNING":
-            return
-        self.last_trigger_time = time.time()
 
-    def check_end_button_status(self):
-        if self.ui_state != "RUNNING":
-            return
-        
-        elapsed = time.time() - self.last_trigger_time
-        if elapsed > 5.0:
-            self.btn_end.setEnabled(True)
-            self.btn_end.setText("End Run")
-            self.btn_end.setStyleSheet("background-color: #c0392b; color: white;")
-        else:
-            self.btn_end.setEnabled(False)
-            countdown = max(0, int(5.0 - elapsed))
-            self.btn_end.setText(f"End Run (Locked {countdown}s)")
-            self.btn_end.setStyleSheet("background-color: #552222; color: #888888;")
+
+
 
     def check_start_button_status(self):
         if self.ui_state == "HOME":
@@ -800,8 +777,12 @@ class OperatorDashboard(QMainWindow):
 
         # ── Button 6: Start / End shortcut ───────────────────────────────────
         if btn_id == 6:
-            if self.ui_state == "HOME" and self.btn_start.isEnabled():
-                self.btn_start.click()
+            if self.ui_state == "HOME":
+                if self.stacked_widget.currentIndex() == 0 and self.btn_start.isEnabled():
+                    self.serial_thread.send_ejector_command('A')  # Send ACK
+                    self.btn_start.click()
+                else:
+                    self.serial_thread.send_ejector_command('N')  # Send Not ready
             elif self.ui_state == "RUNNING" and self.btn_end.isEnabled():
                 self.btn_end.click()
             return
