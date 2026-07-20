@@ -156,8 +156,7 @@ class VisionThread(QThread):
             self.consecutive_failures += 1
             self.ejector_command.emit('F')
             
-            if self.consecutive_failures >= 3:
-                import time
+            if self.consecutive_failures >= 5:
                 time.sleep(0.04)  # 40ms delay to prevent STM32 UART overrun
                 self.ejector_command.emit('B')
 
